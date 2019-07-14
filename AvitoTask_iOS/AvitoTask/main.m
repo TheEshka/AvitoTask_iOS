@@ -13,25 +13,21 @@ int main(int argc, const char * argv[]) {
     @autoreleasepool {
         //NSURL *base = [[NSBundle mainBundle] resourceURL];
         //Так как приложение Xcode в режиме debug запускается не в локальной директории, то для запуска ввести сюда свой путь, в собранном бинарнике используется строка выше для получения локлаьной директории
-        NSURL *base = [NSURL fileURLWithPath:@"/Users/theeska/Desktop/AvitoTask_iOS/AvitoTask/"];
+        NSURL *base = [NSURL fileURLWithPath:@"/Users/theeska/Desktop/GitRepo/AvitoTask_iOS/AvitoTask_iOS/AvitoTask/"];
+        HelperFunctions *helper = [[HelperFunctions alloc] initWithPath:base];
+        NSDictionary *structure = [helper readFileInLocalPath:@"Structure.json"];
+        NSDictionary *draftValue = [helper readFileInLocalPath:@"Draft_values.json"];
         
-        NSURL *structureUrl = [NSURL fileURLWithPath:@"Structure.json" relativeToURL:base];
-        NSDictionary *structure = [HelperFunctions readFile:structureUrl];
-        
-        NSURL *draftValueUrl = [NSURL fileURLWithPath:@"Draft_values.json" relativeToURL:base];
-        NSDictionary *draftValue = [HelperFunctions readFile:draftValueUrl];
         NSArray *draftValues = [draftValue valueForKey:@"values"];
-        
-        
+    
         NSMutableArray *params = [[structure valueForKey:@"params"] mutableCopy];
         for (NSInteger i = 0; i < [params count]; i++) {
-            NSDictionary *resultedParam = [HelperFunctions setValueFor:params[i] from:draftValues];
+            NSDictionary *resultedParam = [helper setValueFor:params[i] from:draftValues];
             params[i] = resultedParam;
         }
-        NSDictionary *result = @{@"params": params};
         
-        NSURL *resultUrl = [NSURL fileURLWithPath:@"Result.json" relativeToURL:base];
-        [HelperFunctions writeDictionary:result inURL:resultUrl];
+        NSDictionary *result = @{@"params": params};
+        [helper writeDictionary:result inLocalPath:@"Result.json"];
     }
     return 0;
 }

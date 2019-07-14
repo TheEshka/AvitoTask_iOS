@@ -10,21 +10,32 @@
 
 @implementation HelperFunctions
 
-+ (NSDictionary *)setValueFor:(NSDictionary *)structure from:(NSArray *)druftValues
+- (instancetype)initWithPath:(NSURL *)url
+{
+    self = [super init];
+    if (self) {
+        _mainPath = url;
+    }
+    return self;
+}
+
+- (NSDictionary *)setValueFor:(NSDictionary *)structure from:(NSArray *)druftValues
 {
     //There no values
     structure = [structure mutableCopy];
-    NSMutableArray *values = [structure valueForKey:@"values"]; // will be converted to mutable later? if needed
+    NSMutableArray *values = [structure valueForKey:@"values"];// will be converted to mutable later? if needed
+    [self structureAbortIfNil:structure[@"value"]];
+    [self structureAbortIfNil:structure[@"id"]];
     if (!values)
     {
-        NSString *value = (NSString *)[self findDictionaryById:[[structure valueForKey:@"id"] integerValue] inArray:druftValues];
+        NSString *value = (NSString *)[HelperFunctions findDictionaryById:[[structure valueForKey:@"id"] integerValue] inArray:druftValues];
         if (value) [structure setValue:value forKey:@"value"];
         return structure;
     }
     
     //Set from values
-    NSNumber *valNum = (NSNumber *)[self findDictionaryById:[[structure valueForKey:@"id"] integerValue] inArray:druftValues];
-    NSString *value = (NSString *)[self findDictionaryById:[valNum integerValue] inArray:values];
+    NSNumber *valNum = (NSNumber *)[HelperFunctions findDictionaryById:[[structure valueForKey:@"id"] integerValue] inArray:druftValues];
+    NSString *value = (NSString *)[HelperFunctions findDictionaryById:[valNum integerValue] inArray:values];
     if (value) [structure setValue:value forKey:@"value"];
     
     //Check for params inside
@@ -36,8 +47,10 @@
     values = [values mutableCopy];
     for (NSInteger i = 0; i < [values count]; i++) {
         NSMutableArray *insideParam = [[values[i] valueForKey:@"params"] mutableCopy];
+        [self structureAbortIfNil:insideParam];
         for (NSInteger j = 0; j < [insideParam count]; j++) {
             NSDictionary *oneInsideParam = [self setValueFor:insideParam[j] from:druftValues];
+            [self structureAbortIfNil:oneInsideParam];
             insideParam[j] = oneInsideParam;
         }
         values[i] = insideParam;
@@ -68,9 +81,10 @@
 }
 
 
-+ (NSDictionary *)readFile:(NSURL *)url
+- (NSDictionary *)readFileInLocalPath:(NSString *)path;
 {
     NSError *error;
+    NSURL *url = [NSURL fileURLWithPath:path relativeToURL: self.mainPath];
     NSData *structureData = [NSData dataWithContentsOfURL:url options: 0 error:&error];
     if (error)
     {
@@ -80,13 +94,28 @@
     return [NSJSONSerialization JSONObjectWithData:structureData options:kNilOptions error:nil];
 }
 
-+ (void)writeDictionary:(NSDictionary *)dictionary inURL:(NSURL *)url
+- (void)writeDictionary:(NSDictionary *)dictionary inLocalPath:(NSString *)path
 {
     NSError *error;
+    NSURL *url = [NSURL fileURLWithPath:path relativeToURL: self.mainPath];
     [[NSFileManager defaultManager] createFileAtPath:url.absoluteString contents:nil attributes:nil];
     NSData *data = [NSJSONSerialization dataWithJSONObject:dictionary options:0 error:&error];
     [data writeToURL:url atomically:YES];
     return;
+}
+
+- (void)structureAbortIfNil:(id)object
+{
+    if (!object)
+    {
+        NSDictionary *error = @{@"error":
+                                    @{
+                                        @"message":@"Входные файлы некорректны"
+                                        }
+                                };
+        [self writeDictionary:error inLocalPath:@"error.json"];
+        abort();
+    }
 }
 
 @end

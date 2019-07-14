@@ -12,10 +12,21 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface HelperFunctions : NSObject
 
-+ (NSDictionary *)setValueFor:(NSDictionary *)structure from:(NSArray *)druftValues;
+@property (nonatomic, strong) NSURL *mainPath;
 
-+ (NSDictionary *)readFile:(NSURL *)url;
-+ (void)writeDictionary:(NSDictionary *)dictionary inURL:(NSURL *)url;
+- (instancetype)initWithPath:(NSURL *)url;
+
+- (NSDictionary *)readFileInLocalPath:(NSString *)path;
+- (void)writeDictionary:(NSDictionary *)dictionary inLocalPath:(NSString *)path;
+
+/**
+ Parser
+
+ @param structure one param
+ @param druftValues array of values with ids
+ @return structure with values
+ */
+- (NSDictionary *)setValueFor:(NSDictionary *)structure from:(NSArray *)druftValues;
 
 @end
 
